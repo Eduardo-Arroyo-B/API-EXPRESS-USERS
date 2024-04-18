@@ -1,7 +1,9 @@
-const prisma = require('../../SettingsPrisma')
-const { PrismaClientKnownRequestError } = require('@prisma/client')
 const express = require('express')
 const router = express.Router()
+const prisma = require('../../SettingsPrisma')
+const { PrismaClientKnownRequestError } = require('@prisma/client')
+const jwt= require('jsonwebtoken')
+const config = require('../modules/config')
 
 //Middleware que especifica los tiempos de peticion en el servidor
 const timeLog = (req, res, next) => {
@@ -21,11 +23,12 @@ const timeLog = (req, res, next) => {
     next()
 }
 
+// Lanza en consola los tiempos de conexion de las peticiones
 router.use(timeLog)
 
 //Protocolos de peticion
 router.get('/consulta', async (req, res) => {
-    //Consulta de datos en la db cons ORM Prisma
+    //Consulta de datos en la db con ORM Prisma
     const consultUsers = await prisma.users.findMany()
     
     //Envio de datos
@@ -33,17 +36,24 @@ router.get('/consulta', async (req, res) => {
 })
 
 router.post('/creacion', async (req, res) => {
+
+    const { email, name, lastname, age } = req.body
+
     const createUser = await prisma.users.create({
         data: {
-            email: req.body.email,
-            name: req.body.name,
-            lastname: req.body.lastname,
-            age: req.body.age
+            email: email,
+            name: name,
+            lastname: lastname,
+            age: age
         }
     })
 
-    res.json(createUser)
-    console.log(createUser)
+    const token = jwt.sign({id: createUser.id}, config.secret, {
+        expiresIn: '24h'
+    })
+
+    res.json({createUser, token})
+    console.log(createUser, token)
 })
 
 router.put('/actualizar/:id', async (req, res) => {
