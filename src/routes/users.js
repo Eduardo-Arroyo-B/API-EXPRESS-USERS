@@ -4,6 +4,7 @@ const prisma = require('../../SettingsPrisma')
 const { PrismaClientKnownRequestError } = require('@prisma/client')
 const jwt= require('jsonwebtoken')
 const config = require('../modules/config')
+const verifyToken = require('../modules/verifyToken')
 
 //Middleware que especifica los tiempos de peticion en el servidor
 const timeLog = (req, res, next) => {
@@ -27,9 +28,12 @@ const timeLog = (req, res, next) => {
 router.use(timeLog)
 
 //Protocolos de peticion
-router.get('/consulta', async (req, res) => {
+router.get('/consulta', verifyToken, async (req, res) => {
     //Consulta de datos en la db con ORM Prisma
     const consultUsers = await prisma.users.findMany()
+    if (!consultUsers) {
+        return res.status(404).send('User no found')
+    }
     
     //Envio de datos
     res.json(consultUsers)
@@ -56,7 +60,30 @@ router.post('/creacion', async (req, res) => {
     console.log(createUser, token)
 })
 
-router.put('/actualizar/:id', async (req, res) => {
+router.post('/signin', async (req, res,) => {
+    const { email } = req.body
+
+    const searchUser = await prisma.users.findUnique({
+        where: {
+            email: email
+        }
+    })
+
+    if (!searchUser) {
+        return res.status(404).json({message: "User not found"})
+    }
+
+    const token = jwt.sign({email}, config.secret)
+
+    res.json({
+        auth: true,
+        token
+    })
+})
+
+router.put('/actualizar/:id', verifyToken,  async (req, res) => {
+
+    const { email, name, lastname, age } = req.body
 
     const searchUser = await prisma.users.findUnique({
         where: {
@@ -70,10 +97,10 @@ router.put('/actualizar/:id', async (req, res) => {
                 id: Number(req.params.id)
             },
             data: {
-                email: req.body.email,
-                name: req.body.name,
-                lastname: req.body.lastname,
-                age: req.body.age
+                email: email,
+                name: name,
+                lastname: lastname,
+                age: age
             }
         })
 
