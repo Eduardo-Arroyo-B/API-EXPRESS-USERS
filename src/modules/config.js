@@ -1,5 +1,6 @@
 const config = {
-     secret: "epsilon"
+
+     secret: "epsion"
 }
 
 module.exports = config

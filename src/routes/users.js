@@ -77,7 +77,8 @@ router.post('/signin', async (req, res,) => {
 
     res.json({
         auth: true,
-        token
+        token,
+        searchUser
     })
 })
 
