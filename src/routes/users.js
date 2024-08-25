@@ -82,6 +82,23 @@ router.post('/signin', async (req, res,) => {
     })
 })
 
+router.post('/login', async (req, res,) => {
+    const { email, name } = req.body
+
+    const searchUser = await prisma.users.findUnique({
+        where: {
+            email,
+            name
+        }
+    })
+
+    if (!searchUser) {
+        return res.status(404).json({message: "User not found"})
+    }
+
+    res.json({searchUser})
+})
+
 router.put('/actualizar/:id', verifyToken,  async (req, res) => {
 
     const { email, name, lastname, age } = req.body
@@ -110,8 +127,6 @@ router.put('/actualizar/:id', verifyToken,  async (req, res) => {
     } else {
         res.send('Username does no exist')
     }
-
-
 })
 
 router.delete('/eliminar/:id', async (req, res) => {
